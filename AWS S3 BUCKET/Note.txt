@@ -1,0 +1,18 @@
+AWS S3 BUCKET SE HAM FILE UPLOAD KARTE HAI AGAR AWS SETUP ME KOI DIKKAT HO TO MERAN STRACK MILLINS KA LEC NUMBER 78 & 79 KO WATCH KRNA HAI
+
+AWS SETUP STEPS 
+____________________________________________
+1. Login AWS account
+2. Click you AWS account --> Security credentials
+3. Security credentials -> Access Management -> User -> Create User 
+4. Type username according to your application (demo) -> next 
+5. Click -> Attach policies directly -> Search S3 -> AmazonS3FullAccess -> next -> create user
+6. Click your username -> Security credentials -> Access keys -> Create Access Key
+7. Create Access keys -> Other ->Create access key -> you got access key & secret access key
+8. store access key & secret access key in env like
+	AWS_ACCESS_KEY - fsdfsdfsdfs
+	AWS_SECRET_ACCESS_KEY - sdfsdfsdf+sdfsdf
+
+9. Search S3 service
+10. Create Bucket -> Bucket name(unique) -> Create Bucket
+11. Click you bucket name -> Permissions -> CORS -> Edit ->Paste AWS Cors Policy Json File
