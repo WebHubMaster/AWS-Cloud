@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
+import {v4 as uuid} from 'uuid'
 import Avtar from "../shared/avtar"
 import Card from "../shared/card"
 import { useContext, useState } from "react"
@@ -36,7 +37,7 @@ const Layout = ()=>{
         return finalPath
     }
 
-    const {session} = useContext(Context)
+    const {session, setSession} = useContext(Context)
 
     const uploadProfile = ()=>{
         const input = document.createElement("input")
@@ -49,9 +50,12 @@ const Layout = ()=>{
 
             const file = input.files[0]
             console.log(file)
+            const ext = file.type.split("/").pop()
+
+            const path = `profile/${uuid()}.${ext}`
 
             const payload = {
-                path: 'profile/demo.png',
+                path,
                 type: file.type
             }
             
@@ -63,7 +67,8 @@ const Layout = ()=>{
                 }
                 const {data} = await HttpInterceptor.post('/storage/upload', payload)
                 await HttpInterceptor.put(data.url, file, options)
-                console.log("File uploaded successfully")
+                const {data: url} = await HttpInterceptor.put('/auth/update-profile', {path})
+                setSession({...session, image: url.image})
             }
 
             catch(err)
@@ -106,7 +111,7 @@ const Layout = ()=>{
                             {
                                 session &&
                                 <Avtar 
-                                    image="/images/avtar.png"
+                                    image={session.image}
                                     title={session.fullname}
                                     subtitle={session.email}
                                     titleColor="white"
