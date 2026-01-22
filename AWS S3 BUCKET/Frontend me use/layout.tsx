@@ -1,16 +1,29 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import {v4 as uuid} from 'uuid'
 import Avtar from "../shared/avtar"
 import Card from "../shared/card"
-import { useContext, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import Dashboard from "./Dashboard"
 import Context from "../Context"
 import HttpInterceptor from "../../lib/HttpInterceptor"
+import useSWR, { mutate } from "swr"
+import Featcher from "../../lib/Featcher"
+import { toast } from "react-toastify"
+import CatchError from "../../lib/CatchError"
+import SuggestionFriend from "./friend/SuggestionFriend"
+import FriendRequest from "./friend/FriendRequest"
+const EightMintInMs = 8*60*1000
 
 const Layout = ()=>{
     const [leftAsideSize, setLeftAsideSize] = useState(350)
     const rightAsideSize = 450
     const collapseSize = 160
+    const navigate = useNavigate()
+    const { error } = useSWR('/auth/refresh-token', Featcher, {
+        refreshInterval: EightMintInMs,
+        shouldRetryOnError: false
+    })
+
     const menus = [
         {
             href:'/app/dashboard',
@@ -37,6 +50,16 @@ const Layout = ()=>{
         return finalPath
     }
 
+    const FriendUiBlockList = [
+        '/app/friends',
+        '/app/chat',
+        '/app/Audio-chat',
+        '/app/video-chat'
+    ]
+
+    const isBlockedUi = FriendUiBlockList.some((path)=> path === pathname)
+
+
     const {session, setSession} = useContext(Context)
 
     const uploadProfile = ()=>{
@@ -49,14 +72,15 @@ const Layout = ()=>{
                 return
 
             const file = input.files[0]
-            console.log(file)
+
             const ext = file.type.split("/").pop()
 
             const path = `profile/${uuid()}.${ext}`
 
             const payload = {
                 path,
-                type: file.type
+                type: file.type,
+                status: 'public-read'
             }
             
             try{
@@ -69,6 +93,8 @@ const Layout = ()=>{
                 await HttpInterceptor.put(data.url, file, options)
                 const {data: url} = await HttpInterceptor.put('/auth/update-profile', {path})
                 setSession({...session, image: url.image})
+                mutate('/auth/refresh-token')
+                toast.success("Profile Picture Updated...")
             }
 
             catch(err)
@@ -97,6 +123,25 @@ const Layout = ()=>{
     //     }
     // }
 
+    const Logout = async ()=>{
+        try{
+            await HttpInterceptor.post("/auth/logout")
+            navigate("/login")
+        }
+
+        catch(err)
+        {
+            CatchError(err)
+        }
+    }
+
+    useEffect(()=>{
+        if(error){
+            Logout()
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [error])
+
     return (
         <div className="min-h-screen">
             <aside style={{
@@ -111,7 +156,7 @@ const Layout = ()=>{
                             {
                                 session &&
                                 <Avtar 
-                                    image={session.image}
+                                    image={session.image || './images/avtar.png'}
                                     title={session.fullname}
                                     subtitle={session.email}
                                     titleColor="white"
@@ -129,6 +174,7 @@ const Layout = ()=>{
                     }
                     
 
+
                 <div className="space-y-5">
                     {
                         menus.map((items, index)=>(
@@ -140,7 +186,7 @@ const Layout = ()=>{
                     }
                     
 
-                     <button className="flex items-center gap-3 text-white cursor-pointer hover:text-gray-200">
+                     <button onClick={Logout} className="flex items-center gap-3 text-white cursor-pointer hover:text-gray-200">
                         <i className="ri-logout-circle-r-line text-xl"></i>
                         <p className={`${leftAsideSize === collapseSize ? 'hidden' : ''}`}>Logout</p>
                     </button>
@@ -154,7 +200,13 @@ const Layout = ()=>{
                 marginLeft:`${leftAsideSize}px`,
                 transition:'0.2s'
             }} 
-            className="h-screen py-8 px-2">
+            className="h-screen py-8 px-2 space-y-8">
+                {
+                    !isBlockedUi &&
+                        <FriendRequest />
+                        
+                }
+
                 <Card 
                     title={
                         <div className="flex items-center gap-3">
@@ -175,29 +227,14 @@ const Layout = ()=>{
                         }
                     </>
                 </Card>
+                
+                {
+                    !isBlockedUi &&
+                        <SuggestionFriend />
+                }
             </section>
 
-            <aside style={{width:rightAsideSize}} className="overflow-auto h-screen bg-white p-8 fixed top-0 right-0 border-l border-gray-100">
-                <div className="h-63 overflow-auto">
-                <Card title="Suggested" divider>
-                    <div className="space-y-10">
-                        {
-                            Array(20).fill("suggested").map(()=>(
-                                <div className="flex gap-2 items-center">
-                                    <img src="/images/avtar.png" alt="" className="w-13 h-13 rounded-full object-cover" />
-                                    <div className="space-y-1">
-                                        <h1 className="text-zinc-700 font-medium">Kundan Kumar Sah</h1>
-                                        <button className="px-3 font-medium py-1 bg-blue-500 text-xs text-white rounded flex gap-1 cursor-pointer hover:bg-blue-600">
-                                            <i className="ri-user-add-line"></i>
-                                            <p>Add Freind</p>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        }
-                    </div>
-                    </Card>
-                </div>
+            <aside style={{width:rightAsideSize}} className="space-y-5 overflow-auto h-screen bg-white p-8 fixed top-0 right-0 border-l border-gray-100">
                 
                 <Card title="Friends" divider>
                     <div className="space-y-5">
@@ -238,6 +275,7 @@ const Layout = ()=>{
                         }
                     </div>
                 </Card>
+
             </aside>
         </div>
     )
