@@ -1,6 +1,8 @@
 import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
+type ACLType = "private" | 'public-read'
+
 export const connection = new S3Client({
     region: process.env.REGION,
     endpoint:`https://s3-${process.env.REGION}.amazonaws.com`,
@@ -38,11 +40,12 @@ export const downloadObject = async (path: string, expiresIn: number = 60)=>{
     return url
 }
 
-export const updateObject = async (path: string, type: string)=>{
+export const updateObject = async (path: string, type: string, acl:ACLType = "private")=>{
     const command = new PutObjectCommand({
         Bucket: process.env.S3_BUCKET,
         Key: path,
-        ContentType: type
+        ContentType: type,
+        ACL: acl
     })
 
     const url = await getSignedUrl(connection, command, {expiresIn: 60})
