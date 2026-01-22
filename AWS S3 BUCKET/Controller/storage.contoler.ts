@@ -29,11 +29,12 @@ export const uploadFile = async (req: Request, res: Response)=>{
     try{
         const path = req.body?.path
         const type = req.body?.type
+        const status = req.body?.status
 
-        if(!path || !type)
-            throw TryError("Invalid request path or type missing", 400)
+        if(!path || !type || !status)
+            throw TryError("Invalid request path, type or status missing", 400)
 
-        const url = await updateObject(path, type)
+        const url = await updateObject(path, type, status)
         res.json({url})
     }
 
