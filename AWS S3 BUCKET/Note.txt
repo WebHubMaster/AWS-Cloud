@@ -16,3 +16,9 @@ ____________________________________________
 9. Search S3 service
 10. Create Bucket -> Bucket name(unique) -> Create Bucket
 11. Click you bucket name -> Permissions -> CORS -> Edit ->Paste AWS Cors Policy Json File
+
+12. Bucket Public
+__________________________________________________________
+1. Go to your bucket (rbac-network) 
+2. Go bucket Permissions -> Object Ownership -> Edit -> ACLs enabled -> I acknowledge that ACLs will be restored. (tick) -> Save Changes
+3. Block public access (bucket settings) -> Edit -> Block all public access (uncheck) -> save changes -> type confirm -> click confirm 
